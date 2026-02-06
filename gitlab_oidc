@@ -1,0 +1,77 @@
+Technical Specification: AWS & GitLab OIDC Integration
+
+1. Overview
+This document outlines the procedure for establishing a secure, passwordless authentication flow between GitLab CI/CD and AWS using OpenID Connect (OIDC). This method eliminates the need for long-lived AWS IAM Access Keys.
+
+2. AWS Setup
+2.1 Identity Provider (IdP)
+Navigate to IAM > Identity Providers.
+
+Click Add provider and select OpenID Connect.
+
+Provider URL: https://gitlab.com
+
+Audience: https://gitlab.com
+
+Click Get thumbprint and save.
+
+2.2 IAM Role Trust Policy
+Create a new IAM Role. Use the following Trust Relationship to restrict access to your specific GitLab project and branch:
+
+JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::YOUR_ACCOUNT_ID:oidc-provider/gitlab.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringLike": {
+          "gitlab.com:sub": "project_path:YOUR_ORG/YOUR_REPO:ref_type:branch:ref:main"
+        },
+        "StringEquals": {
+          "gitlab.com:aud": "https://gitlab.com"
+        }
+      }
+    }
+  ]
+}
+
+3. GitLab Configuration
+3.1 CI/CD Variables
+Navigate to Settings > CI/CD > Variables and add:
+
+Key: ROLE_ARN
+
+Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME
+
+3.2 Pipeline Script (.gitlab-ci.yml)
+Use the following configuration to authorize the runner:
+
+YAML
+image: 
+  name: amazon/aws-cli:latest
+  entrypoint: [""]
+
+variables:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_PROFILE: oidc
+
+before_script:
+  - mkdir -p ~/.aws
+  - echo "${CI_JOB_JWT_V2}" > /tmp/web_identity_token
+  - echo -e "[profile oidc]\nrole_arn = ${ROLE_ARN}\nweb_identity_token_file = /tmp/web_identity_token" > ~/.aws/config
+
+validate_connection:
+  script:
+    - aws sts get-caller-identity
+    - aws s3 ls
+4. Security Benefits
+No Secret Management: No AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY stored in GitLab.
+
+Short-lived Credentials: Tokens expire automatically after the job finishes.
+
+Granular Access: Permissions are scoped down to the specific repository and branch level.
