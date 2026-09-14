@@ -1,0 +1,83 @@
+Weather Forecasts
+
+Weather is particularly important for volume forecasting because consumption can have a strong relationship with weather.
+
+For example:
+
+Cold weather
+     ↓
+Higher heating demand
+     ↓
+Higher expected volume
+
+or:
+
+Warm weather
+     ↓
+Lower heating demand
+     ↓
+Different consumption profile
+
+The architecture therefore brings Weather Forecasts into CDP staging.
+
+3. Retail-related inputs
+
+The architecture also contains several inputs specifically related to Retail forecasting.
+
+Retail Commercial Forecasts
+
+These provide commercial forecast information for the retail side.
+
+Flow:
+
+Retail Commercial Forecasts
+            ↓
+CDP
+            ↓
+User Corrections
+            ↓
+Retail Commercial Forecast
+            ↓
+Retail SMART Forecast
+Retail Customer Segmentation
+
+Customers can be grouped into different segments.
+
+For example, conceptually:
+
+Customer A → Domestic
+Customer B → Commercial
+Customer C → Industrial
+
+Different customer segments behave differently, so segmentation is important to forecasting.
+
+The architecture therefore has:
+
+Retail Customer Segmentation
+              ↓
+Corrected / approved segmentation
+              ↓
+Forecast generation
+4. Industry Meter Data
+
+The diagram shows Industry Meter Data coming through an External Corrections process.
+
+This is an important architectural distinction.
+
+The diagram states that:
+
+Industry Data is staged and corrected outside of the CDP system.
+
+So not every correction happens inside VFS2/CDP.
+
+The flow is effectively:
+
+Industry Meter Data
+        ↓
+External Corrections
+        ↓
+Corrected Industry Data
+        ↓
+CDP / VFS2 processing
+
+This means VFS2 has to consume data that may already have gone through an external correction process.
